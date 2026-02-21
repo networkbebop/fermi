@@ -1,11 +1,10 @@
 {
   "rewrites": [
-    { "source": "/app", "destination": "/app.html" },
-    { "source": "/app/(.*)", "destination": "/app.html" },
-
     { "source": "/channels/(.*)", "destination": "/app.html" },
     { "source": "/guilds/(.*)", "destination": "/app.html" },
     { "source": "/settings/(.*)", "destination": "/app.html" },
+    { "source": "/app", "destination": "/app.html" },
+    { "source": "/app/(.*)", "destination": "/app.html" },
 
     { "source": "/login", "destination": "/login.html" },
     { "source": "/register", "destination": "/register.html" },
