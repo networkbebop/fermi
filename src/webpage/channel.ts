@@ -2855,40 +2855,28 @@ class Channel extends SnowFlake {
 		});
 		notiselect.show();
 	}
-	async putmessages() {
-		//TODO swap out with the WS op code
-		if (this.allthewayup) {
-			return;
-		}
-		if (this.lastreadmessageid && this.messages.has(this.lastreadmessageid)) {
-			return;
-		}
-		const j = await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100", {
-			headers: this.headers,
-		});
+async putmessages() {
+  if (this.allthewayup) return;
+  if (this.lastreadmessageid && this.messages.has(this.lastreadmessageid)) return;
 
-		const response = (await j.json()) as messagejson[];
-		if (response.length !== 100) {
-			this.allthewayup = true;
-		}
-		let prev: Message | undefined;
-		for (const thing of response) {
-			const message = new Message(thing, this);
-			if (prev) {
-				this.idToNext.set(message.id, prev.id);
-				this.idToPrev.set(prev.id, message.id);
-			} else {
-				this.lastmessage = message;
-				this.setLastMessageId(message.id);
-			}
-			prev = message;
-		}
-		if (!response.length) {
-			this.lastmessageid = undefined;
-			this.lastreadmessageid = undefined;
-		}
-		await this.slowmode();
-	}
+  const res = await fetch(`${this.info.api}/channels/${this.id}/messages?limit=100`, {
+    headers: this.headers,
+  });
+
+  const json = await res.json().catch(() => null);
+
+  if (!res.ok || !Array.isArray(json)) {
+    console.error("putmessages failed", {
+      status: res.status,
+      body: json,
+      channel: this.id,
+    });
+    return; // <-- prevents the “response is not iterable” crash
+  }
+
+  const response = json as messagejson[];
+  ...
+}
 	delChannel(json: channeljson) {
 		const build: Channel[] = [];
 		for (const thing of this.children) {
