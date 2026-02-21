@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/channels/(.*)", "destination": "/app.html" },
     { "source": "/invite/(.*)", "destination": "/invite.html" },
-    { "source": "/template/(.*)", "destination": "/template.html" }
+    { "source": "/template/(.*)", "destination": "/template.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
