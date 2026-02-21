@@ -1,5 +1,19 @@
 [
 	{
+		"name": "NetworkBebop",
+		"description": "The official NetworkBebop Spacebar instance.",
+		"image": "https://raw.githubusercontent.com/spacebarchat/spacebarchat/master/branding/png/Spacebar__Icon-Discord.png",
+		"url": "https://spacebar.networkbebop.com",
+		"language": "en",
+		"country": "US",
+		"display": true,
+		"urls": {
+		"wellknown": "https://spacebar.networkbebop.com",
+		"api": "https://api-spacebar.networkbebop.com/api"
+		"cdn": "https://cdn-spacebar.networkbebop.com",
+		"gateway": "wss://gateway-spacebar.networkbebop.com"
+		},
+	{
 		"name": "Spacebar",
 		"description": "The official Spacebar instance.",
 		"image": "https://raw.githubusercontent.com/spacebarchat/spacebarchat/master/branding/png/Spacebar__Icon-Discord.png",
