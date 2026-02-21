@@ -8,10 +8,10 @@
 		"country": "US",
 		"display": true,
 		"urls": {
-		"wellknown": "https://spacebar.networkbebop.com/",
-		"api": "https://spacebar.networkbebop.com/api/"
-		"cdn": "https://spacebar.networkbebop.com/",
-		"gateway": "wss://spacebar.networkbebop.com/"
+		"wellknown": "https://spacebar.networkbebop.com",
+		"api": "https://spacebar.networkbebop.com/api/v9"
+		"cdn": "https://spacebar.networkbebop.com",
+		"gateway": "wss://spacebar.networkbebop.com"
 		},
 	{
 		"name": "Spacebar",
