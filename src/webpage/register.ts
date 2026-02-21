@@ -1,9 +1,10 @@
-import {I18n} from "./i18n.js";
-import {adduser, Specialuser} from "./utils/utils.js";
-import {makeLogin} from "./login.js";
-import {MarkDown} from "./markdown.js";
-import {Dialog, FormError} from "./settings.js";
-import {trimTrailingSlashes} from "./utils/netUtils";
+import { I18n } from "./i18n.js";
+import { adduser, Specialuser } from "./utils/utils.js";
+import { makeLogin } from "./login.js";
+import { MarkDown } from "./markdown.js";
+import { Dialog, FormError } from "./settings.js";
+import { trimTrailingSlashes } from "./utils/netUtils";
+
 export async function makeRegister(
 	trasparentBg = false,
 	instance = "",
@@ -11,14 +12,18 @@ export async function makeRegister(
 ) {
 	const dialog = new Dialog("");
 	const opt = dialog.options;
+
 	opt.addTitle(I18n.htmlPages.createAccount());
+
 	const picker = opt.addInstancePicker(
 		(info) => {
+			// Spacebar expects /api/v9/auth/register (info.api should already be /api/v9 or similar)
 			form.fetchURL = trimTrailingSlashes(info.api) + "/auth/register";
 			tosLogic(md);
 		},
-		{instance},
+		{ instance },
 	);
+
 	dialog.show(trasparentBg);
 
 	const form = opt.addForm(
@@ -31,13 +36,18 @@ export async function makeRegister(
 					token: res.token,
 				});
 				u.username = user.value;
+
 				if (handle) {
 					dialog.hide();
 					handle(u);
 					return;
 				}
+
 				const redir = new URLSearchParams(window.location.search).get("goback");
-				if (redir && (!URL.canParse(redir) || new URL(redir).host === window.location.host)) {
+				if (
+					redir &&
+					(!URL.canParse(redir) || new URL(redir).host === window.location.host)
+				) {
 					window.location.href = redir;
 				} else {
 					window.location.href = "/channels/@me";
@@ -54,25 +64,53 @@ export async function makeRegister(
 			vsmaller: true,
 		},
 	);
+
 	const button = form.button.deref();
 	picker.giveButton(button);
 	button?.classList.add("createAccount");
 
 	const email = form.addTextInput(I18n.htmlPages.emailField(), "email");
 	const user = form.addTextInput(I18n.htmlPages.userField(), "username");
-	const p1 = form.addTextInput(I18n.htmlPages.pwField(), "password", {password: true});
-	const p2 = form.addTextInput(I18n.htmlPages.pw2Field(), "password2", {password: true});
-	form.addDateInput(I18n.htmlPages.dobField(), "date_of_birth");
+	const p1 = form.addTextInput(I18n.htmlPages.pwField(), "password", { password: true });
+	const p2 = form.addTextInput(I18n.htmlPages.pw2Field(), "password2", { password: true });
+
+	// IMPORTANT: Keep a reference so we can force it into the payload (some serializers skip date inputs)
+	const dob = form.addDateInput(I18n.htmlPages.dobField(), "date_of_birth");
+
 	form.addPreprocessor((e) => {
+		// Validate passwords
 		if (p1.value !== p2.value) {
 			throw new FormError(p2, I18n.localuser.PasswordsNoMatch());
 		}
-		//@ts-expect-error it's there
+
+		// Remove confirm password from payload
+		// @ts-expect-error it's there
 		delete e.password2;
+
+		// Validate TOS consent
 		if (!check.checked) throw new FormError(checkbox, I18n.register.tos());
-		//@ts-expect-error it's there
+		// @ts-expect-error it's there
 		e.consent = check.checked;
+
+		// Validate and FORCE date_of_birth into payload as YYYY-MM-DD
+		const rawDob = (dob as HTMLInputElement).value?.trim();
+		if (!rawDob) {
+			// Friendly error: highlight DOB field
+			throw new FormError(dob as unknown as HTMLElement, I18n.htmlPages.dobField());
+		}
+
+		// Spacebar expects YYYY-MM-DD (confirmed working against your server)
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDob)) {
+			throw new FormError(
+				dob as unknown as HTMLElement,
+				"Date of birth must be in YYYY-MM-DD format.",
+			);
+		}
+
+		// @ts-expect-error add required field explicitly
+		e.date_of_birth = rawDob;
 	});
+
 	const toshtml = document.createElement("div");
 	const md = document.createElement("span");
 	const check = document.createElement("input");
@@ -80,7 +118,9 @@ export async function makeRegister(
 
 	toshtml.append(md, check);
 	const checkbox = form.addHTMLArea(toshtml);
+
 	form.addCaptcha();
+
 	const a = document.createElement("a");
 	a.onclick = () => {
 		dialog.hide();
@@ -89,22 +129,28 @@ export async function makeRegister(
 	a.textContent = I18n.htmlPages.alreadyHave();
 	form.addHTMLArea(a);
 }
+
 async function tosLogic(box: HTMLElement) {
 	const instanceInfo = JSON.parse(localStorage.getItem("instanceinfo") ?? "{}");
 	const apiurl = new URL(instanceInfo.api);
 	const urlstr = apiurl.toString();
+
 	const response = await fetch(urlstr + (urlstr.endsWith("/") ? "" : "/") + "ping");
 	const data = await response.json();
 	const tosPage = data.instance.tosPage;
+
 	if (!box) return;
+
 	if (tosPage) {
 		box.innerHTML = "";
 		box.append(new MarkDown(I18n.register.agreeTOS(tosPage)).makeHTML());
 	} else {
 		box.textContent = I18n.register.noTOS();
 	}
+
 	console.log(tosPage);
 }
+
 if (window.location.pathname.startsWith("/register")) {
 	await I18n.done;
 	makeRegister();
