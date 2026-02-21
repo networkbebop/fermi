@@ -1,8 +1,20 @@
 {
   "rewrites": [
+    { "source": "/app", "destination": "/app.html" },
+    { "source": "/app/(.*)", "destination": "/app.html" },
+
     { "source": "/channels/(.*)", "destination": "/app.html" },
+    { "source": "/guilds/(.*)", "destination": "/app.html" },
+    { "source": "/settings/(.*)", "destination": "/app.html" },
+
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/register", "destination": "/register.html" },
+    { "source": "/recover", "destination": "/recover.html" },
+    { "source": "/reset", "destination": "/reset.html" },
+
     { "source": "/invite/(.*)", "destination": "/invite.html" },
     { "source": "/template/(.*)", "destination": "/template.html" },
+
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
