@@ -191,6 +191,67 @@ class Guild extends SnowFlake {
 	large!: boolean;
 	stickers!: Sticker[];
 	members = new Set<Member>();
+
+		private showVoiceChannelPlaceholder(channel: Channel, addstate: boolean) {
+		// Keep URL behavior consistent
+		if (addstate) {
+			history.pushState([this.id, channel.id], "", "/channels/" + channel.id);
+		}
+
+		// Clear previous channel UI + hide typing UI
+		this.removePrevChannel();
+
+		this.localuser.channelfocus = channel;
+		this.prevchannel = channel;
+
+		this.localuser.pageTitle(channel.name);
+
+		// Hide typing / upload UI (voice channel has no message composer)
+		const replybox = document.getElementById("replybox") as HTMLElement | null;
+		const typebox = document.getElementById("typebox") as HTMLElement | null;
+		const upload = document.getElementById("upload") as HTMLElement | null;
+		const typediv = document.getElementById("typediv") as HTMLElement | null;
+		const sideDiv = document.getElementById("sideDiv") as HTMLElement | null;
+
+		replybox?.classList.add("hideReplyBox");
+		typebox?.classList.remove("typeboxreplying");
+		if (typebox) (typebox as HTMLDivElement).contentEditable = "false";
+		if (upload) upload.style.visibility = "hidden";
+		if (typediv) typediv.style.visibility = "hidden";
+		if (sideDiv) sideDiv.innerHTML = "";
+
+		// Replace message area with a stable placeholder (prevents the /messages fetch crash)
+		const loading = document.getElementById("loadingdiv") as HTMLDivElement | null;
+		loading?.classList.remove("loading");
+
+		const channelTopic = document.getElementById("channelTopic") as HTMLSpanElement | null;
+		channelTopic?.setAttribute("hidden", "");
+
+		const messages = document.getElementById("scrollWrap") as HTMLDivElement | null;
+		if (!messages) return;
+
+		for (const thing of Array.from(messages.getElementsByClassName("messagecontainer"))) {
+			thing.remove();
+		}
+
+		const box = document.createElement("div");
+		box.classList.add("messagecontainer");
+		box.style.padding = "16px";
+
+		const h1 = document.createElement("h1");
+		h1.textContent = `${channel.name} (Voice)`;
+
+		const p = document.createElement("p");
+		p.textContent =
+			"Voice channels don’t have message history. Fermi is currently trying to load /messages for voice channels and crashing. This placeholder prevents the app from freezing while voice UI is implemented.";
+
+		box.append(h1, p);
+		messages.append(box);
+
+		// If you have side panel logic that expects to run on channel load:
+		this.localuser.getSidePannel();
+	}
+	
 	static contextmenu = new Contextmenu<Guild, undefined>("guild menu");
 	static setupcontextmenu() {
 		Guild.contextmenu.addButton(
@@ -1769,6 +1830,12 @@ class Guild extends SnowFlake {
 		if (ID) {
 			const channel = this.localuser.channelids.get(ID);
 			if (channel) {
+				// Voice channel: do NOT run the normal message UI path
+				if (channel.type === 2) {
+					this.showVoiceChannelPlaceholder(channel, addstate);
+					return;
+				}
+		
 				await channel.getHTML(addstate, undefined, message);
 				return;
 			} else {
@@ -1783,7 +1850,8 @@ class Guild extends SnowFlake {
 		}
 		if (this.id !== "@me") {
 			for (const thing of this.channels) {
-				if (thing.type !== 4 && thing.visible) {
+				// Skip categories (4) and voice (2) when choosing a default “text view” channel
+				if (thing.type !== 4 && thing.type !== 2 && thing.visible) {
 					await thing.getHTML(addstate, undefined, message);
 					return;
 				}
