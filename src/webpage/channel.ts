@@ -2856,26 +2856,77 @@ class Channel extends SnowFlake {
 		notiselect.show();
 	}
 async putmessages() {
-  if (this.allthewayup) return;
-  if (this.lastreadmessageid && this.messages.has(this.lastreadmessageid)) return;
+	// TODO swap out with the WS op code
+	if (this.allthewayup) return;
 
-  const res = await fetch(`${this.info.api}/channels/${this.id}/messages?limit=100`, {
-    headers: this.headers,
-  });
+	// If we already have the last read message in cache, no need to fetch
+	if (this.lastreadmessageid && this.messages.has(this.lastreadmessageid)) return;
 
-  const json = await res.json().catch(() => null);
+	let res: Response;
+	try {
+		res = await fetch(`${this.info.api}/channels/${this.id}/messages?limit=100`, {
+			headers: this.headers,
+		});
+	} catch (err) {
+		console.error("[putmessages] network error", err);
+		return;
+	}
 
-  if (!res.ok || !Array.isArray(json)) {
-    console.error("putmessages failed", {
-      status: res.status,
-      body: json,
-      channel: this.id,
-    });
-    return; // <-- prevents the “response is not iterable” crash
-  }
+	// If server returns 400/401/etc, it will likely return an error object (not an array)
+	if (!res.ok) {
+		let bodyText = "";
+		try {
+			bodyText = await res.text();
+		} catch {}
+		console.error(
+			`[putmessages] HTTP ${res.status} ${res.statusText} for channel ${this.id}. Body:`,
+			bodyText,
+		);
+		return;
+	}
 
-  const response = json as messagejson[];
-  ...
+	let json: unknown;
+	try {
+		json = await res.json();
+	} catch (err) {
+		console.error("[putmessages] failed to parse JSON", err);
+		return;
+	}
+
+	if (!Array.isArray(json)) {
+		console.error("[putmessages] expected message array, got:", json);
+		return;
+	}
+
+	const response = json as messagejson[];
+
+	if (response.length !== 100) {
+		this.allthewayup = true;
+	}
+
+	let prev: Message | undefined;
+
+	for (const thing of response) {
+		// Reuse existing Message object if already cached
+		const message = this.messages.get(thing.id) ?? new Message(thing, this);
+
+		if (prev) {
+			this.idToNext.set(message.id, prev.id);
+			this.idToPrev.set(prev.id, message.id);
+		} else {
+			this.lastmessage = message;
+			this.setLastMessageId(message.id);
+		}
+
+		prev = message;
+	}
+
+	if (response.length === 0) {
+		this.lastmessageid = undefined;
+		this.lastreadmessageid = undefined;
+	}
+
+	await this.slowmode();
 }
 	delChannel(json: channeljson) {
 		const build: Channel[] = [];
