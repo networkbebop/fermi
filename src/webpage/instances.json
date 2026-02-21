@@ -9,9 +9,9 @@
 		"display": true,
 		"urls": {
 		"wellknown": "https://spacebar.networkbebop.com",
-		"api": "https://api-spacebar.networkbebop.com/api"
-		"cdn": "https://cdn-spacebar.networkbebop.com",
-		"gateway": "wss://gateway-spacebar.networkbebop.com"
+		"api": "https://spacebar.networkbebop.com/api/v9"
+		"cdn": "https://spacebar.networkbebop.com",
+		"gateway": "wss://spacebar.networkbebop.com"
 		},
 	{
 		"name": "Spacebar",
